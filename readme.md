@@ -1,199 +1,222 @@
-# nnUNet 医学影像多器官分割项目
+# Hepatic Vessel Map (HVM): CT Dataset for Liver Vascular and Tumor Segmentation
 
-## 🏥 项目概述
-本项目基于nnUNet框架，实现普美显（Primovist/Gd-EOB-DTPA）增强MRI的多器官自动分割，包括：
-- **肝脏** (Liver)
-- **脾脏** (Spleen) 
-- **腰大肌** (Psoas major muscle)
-- **肝静脉** (Hepatic vein)
-- **门静脉** (Portal vein)
+Pretrained segmentation models and inference code for hepatic portal vein, hepatic vein, and liver tumor segmentation.
 
-## 📊 数据集信息
-- **模态**: 普美显增强MRI（动脉期、门静脉期、延迟期）
-- **样本数量**: XX例患者
-- **数据格式**: NIfTI (.nii.gz)
-- **标注标准**: 专业放射科医生手动标注
-- **数据来源**: [医院/数据集名称]
+This repository releases the automatic segmentation pipeline based on nnU-Net V2, providing precise voxel-wise segmentation of hepatic vascular structures and liver tumors.
 
-## 🎯 模型性能
-| 器官 | Dice系数 | HD95(mm) | 体积相关性 |
-|------|----------|----------|-----------|
-| 肝脏 | 0.95±0.02 | 3.2±1.1 | 0.98 |
-| 脾脏 | 0.91±0.03 | 2.8±0.9 | 0.96 |
-| 腰大肌 | 0.88±0.04 | 4.1±1.3 | 0.94 |
-| 肝静脉 | 0.63±0.05 | 5.3±1.8 | 0.91 |
-| 门静脉 | 0.62±0.04 | 4.7±1.5 | 0.93 |
+---
 
-## 🚀 快速开始
+## Highlights
 
-### 环境要求
+Based on the nnU-Net framework, we developed three distinct segmentation models—specifically designed for segmenting the hepatic veins, portal veins, and liver tumors.
+
+1. Hepatic Vein - Accurate segmentation of right, middle, and left hepatic veins up to third-order branches
+2. Portal Vein - Automatic segmentation of main portal vein and left/right branches up to third-order ramifications
+3. Liver Tumor - Automatic detection and segmentation of hepatic masses
+
+These models are trained and validated on the HVM (Hepatic Vessel Map) Dataset, a comprehensive clinical dataset designed for liver vascular segmentation and surgical planning.
+
+---
+
+## Model Architecture Diagram
+
+![Model Architecture](./Model_artichtecture.png)
+
+---
+
+## Background
+
+Precise delineation of hepatic and portal venous anatomy is crucial for the diagnosis of liver disease, surgical planning, and prognosis prediction. Current three-dimensional visualization of these complex vascular structures relies on manual or semi-automated CT segmentation, which is time-consuming and operator-dependent. Although artificial intelligence (AI) presents a promising alternative, existing methods remain constrained by the scarcity of publicly available datasets with fine-grained vascular annotations.
+
+---
+
+## Pre-trained Models
+
+All trained models are released on Hugging Face:
+
+🔗 https://huggingface.co/Xunqi/nnunet_segment_model/tree/main
+
+| Task | Configuration | Modality |
+|------|---------------|----------|
+| Portal_vein_segment | `3d_fullres` | CT |
+| Hepatic_vein_segment | `3d_fullres` | CT |
+| Liver_tumor_segment | `3d_fullres` | CT |
+
+To use a pre-trained model:
+
+1. Download the model from the link above
+2. Install it using:
 ```bash
-# Python 3.8+
-# CUDA 11.3+ (GPU训练)
-# 内存: 32GB+ RAM
-# 显存: 12GB+ (3D训练)
-
-# 安装依赖
-pip install nnunetv2
-pip install torch torchvision torchaudio
-pip install nibabel simpleitk
+nnUNetv2_install_pretrained_model_from_zip path/to/downloaded_model.zip
 ```
 
-### 数据准备
-1. **数据结构**
-```
-DATASET/
-├── nnUNet_raw/
-│   └── Dataset501_Primovist/
-│       ├── imagesTr/          # 训练图像
-│       ├── labelsTr/          # 训练标签
-│       ├── imagesTs/          # 测试图像
-│       └── dataset.json       # 数据集描述
-└── nnUNet_preprocessed/       # 预处理数据
-```
+---
 
-2. **标签对应关系**
-```
-0: 背景
-1: 肝脏 (Liver)
-2: 脾脏 (Spleen)
-3: 腰大肌 (Psoas major)
-4: 肝静脉 (Hepatic vein)
-5: 门静脉 (Portal vein)
-```
+## Installation
 
-### 训练流程
 ```bash
-# 1. 数据集转换
-nnUNetv2_plan_and_preprocess -d 501 --verify_dataset_integrity
-
-# 2. 训练2D模型
-nnUNetv2_train 501 2d all
-
-# 3. 训练3D全分辨率模型
-nnUNetv2_train 501 3d_fullres all
-
-# 4. 训练3D低分辨率模型
-nnUNetv2_train 501 3d_lowres all
+conda create -n nnunet python=3.10 -y
+conda activate nnunet
+pip install torch --index-url https://download.pytorch.org/whl/cu121
+pip install -e .
 ```
 
-### 推理预测
-```python
-from nnunetv2.inference.predict_from_raw_data import predict_from_raw_data
+Set the three nnU-Net environment variables:
 
-# 单样本预测
-predict_from_raw_data(
-    input_files=['path/to/image.nii.gz'],
-    output_folder='path/to/output',
-    model_training_output_dir='path/to/model',
-    use_folds=(0, 1, 2, 3, 4),
-    save_probabilities=False
-)
+```bash
+export nnUNet_raw=/path/to/nnUNet_raw
+export nnUNet_preprocessed=/path/to/nnUNet_preprocessed
+export nnUNet_results=/path/to/nnUNet_results
 ```
 
-## 🔧 自定义配置
+---
 
-### 训练参数优化
-```json
-// nnUNetTrainerCustom.py
-{
-    "batch_size": 2,
-    "patch_size": [128, 128, 128],
-    "initial_lr": 1e-3,
-    "weight_decay": 3e-5,
-    "epochs": 1000,
-    "loss_function": "DiceCE",
-    "optimizer": "AdamW",
-    "scheduler": "CosineAnnealingLR"
-}
+## Inference with Pretrained Models
+
+```bash
+# 1) Download the desired model from Hugging Face and unzip into $nnUNet_results
+# 2) Run prediction:
+nnUNetv2_predict \
+    -i  /path/to/input_nifti \
+    -o  /path/to/output \
+    -d  <DatasetID> \
+    -c  3d_fullres \
+    -f  all
 ```
 
-### 数据增强策略
-```python
-# 针对普美显MRI的增强
-transforms = [
-    "RandomRotation",
-    "RandomScaling", 
-    "GammaAugmentation",
-    "BrightnessMultiplicativeAugmentation",
-    "SimulateLowResolutionTransform"  # 模拟部分容积效应
-]
+---
+
+## Reproducing Training from Scratch
+
+Data must follow the nnU-Net v2 format:
+
+```bash
+nnUNetv2_plan_and_preprocess -d <DatasetID> --verify_dataset_integrity
+nnUNetv2_train <DatasetID> 3d_fullres <fold>
 ```
 
-## 📁 项目结构
+---
+
+## HVM Dataset (Companion Dataset)
+
+The annotated dataset used to train these models includes:
+
+| Item | Description |
+|------|-------------|
+| Imaging modality | Portal Venous Phase (PVP) contrast-enhanced CT |
+| Number of cases | 282 patients from two medical centers |
+| Number of slices | Over 41,400 slices |
+| Annotated structures | Hepatic veins, portal veins (to third-order branches), liver tumors |
+
+---
+
+## Ground-Truth Annotation Protocol
+
+Ground-truth labels in our dataset were produced through a rigorous semi-automatic pipeline:
+
+Step 1: Initial Segmentation
+A radiologist with 5 years of experience in abdominal imaging performed the initial manual segmentation for all cases using ITK-SNAP software (version 3.8.0).
+
+Step 2: AI-Assisted Annotation**
+For hepatic veins and portal veins:
+- Initial ground truth from 40 cases was used to train two dedicated 3D-UNet models
+- The trained models generated preliminary segmentation masks for remaining 242 cases
+- The junior radiologist manually corrected these AI-generated masks
+
+Step 3: Quality Control and Final Validation**
+A senior abdominal radiologist with more than 15 years of expertise reviewed all segmentations, corrected any inaccuracies, and provided final validation.
+
+Annotation Scope:
+- Hepatic veins: right, middle, and left hepatic veins, including all visible tributaries up to third-order branches
+- Portal veins: main portal vein, left and right portal veins up to third branch of ramification
+- Liver tumors: complete boundary delineation
+
+---
+
+## Data Records
+
+The HVM Dataset is publicly accessible via Zenodo:
+
+🔗 https://zenodo.org/records/17863696
+
+Dataset structure:
 ```
-nnunet_final/
-├── nnunetv2/                    # nnUNet v2核心代码
-├── myfunction_1/               # 自定义功能
-│   ├── dicom转nii/            # DICOM格式转换
-│   ├── 数据准备/              # 数据预处理
-│   ├── 模型管理/              # 模型上传部署
-│   └── 评估指标/              # Dice计算等
-├── dynamic-network-architectures/  # 网络架构
-├── DATASET/                    # 数据集（本地使用）
-│   ├── nnUNet_raw/            # 原始数据
-│   ├── nnUNet_preprocessed/   # 预处理数据
-│   └── nnUNet_results/        # 训练结果
-├── configs/                    # 配置文件
-├── scripts/                    # 训练推理脚本
-├── docs/                       # 文档
-├── .gitignore
-├── requirements.txt
-└── README.md
-```
-
-## 📈 训练曲线示例
-![训练曲线](docs/images/training_curves.png)
-*从左到右：损失函数下降、Dice系数提升、学习率变化*
-
-## 🎨 可视化结果
-![分割结果](docs/images/segmentation_results.png)
-*各器官分割结果叠加显示*
-
-## 🔬 临床应用价值
-1. **肝脏手术规划** - 精确的肝段划分
-2. **肝体积测量** - 活体肝移植评估
-3. **门脉高压评估** - 门静脉直径测量
-4. **营养状态评估** - 腰大肌面积测量
-5. **肿瘤定位** - 与血管关系分析
-
-## 📚 引用文献
-```bibtex
-@article{isensee2021nnu,
-  title={nnU-Net: a self-configuring method for deep learning-based biomedical image segmentation},
-  author={Isensee, Fabian and Jaeger, Paul F and Kohl, Simon AA and Petersen, Jens and Maier-Hein, Klaus H},
-  journal={Nature methods},
-  volume={18},
-  number={2},
-  pages={203--211},
-  year={2021},
-  publisher={Nature Publishing Group}
-}
-
-@article{primovist2020,
-  title={Gd-EOB-DTPA enhanced MRI for liver segmentation},
-  author={Zhang, Y and Wang, L and Chen, X},
-  journal={Medical Physics},
-  volume={47},
-  pages={1234--1245},
-  year={2020}
-}
-```
-
-
-
-
-## 🙏 致谢
-- **nnUNet团队** - 提供优秀的自配置分割框架
-- **数据提供医院** - 普美显MRI数据集
-- **标注医生团队** - 高质量的金标准标注
-
-
-# 训练模型可以在huggfacing中加载预训练权重
-https://huggingface.co/Xunqi/nnunet_segment_model/tree/main
-
-
-
+HVM Dataset/
+├── Center 1/
+│   ├── Image/                           # PVP CT scans (NIfTI format)
+│   ├── Annotation_Hepatic veins/        # Hepatic vein segmentations
+│   ├── Annotation_Portal veins/         # Portal vein segmentations
+│   ├── Annotation_Liver tumors/         # Liver tumor segmentations
+│   └── Center_1_Clinicopathological data.xlsx
+└── Center 2/
+    ├── Image/
+    ├── Annotation_Hepatic veins/
+    ├── Annotation_Portal veins/
+    ├── Annotation_Liver tumors/
+    └── Center_2_Clinicopathological data.xlsx
 ```
 
-需要我添加更多具体内容吗？比如训练脚本示例、数据预处理代码等。
+---
+
+## Technical Validation
+
+Image Quality Control:
+- Each CT scan underwent a two-stage quality assessment
+- Subject eligibility confirmed based on predefined inclusion criteria
+- Visual inspection by a radiologist with over 15 years of experience to confirm absence of significant artifacts and verify adequate vascular contrast
+
+Annotation Quality Control:
+- Multi-step protocol combining manual expertise and AI-assisted refinement
+- Consensus-based ground truth established through two-tier review process
+
+---
+
+## Project Structure
+
+```
+nnunet/
+├── nnunetv2/
+│   ├── experiment_planning/    # Dataset fingerprinting and planning
+│   ├── inference/              # Inference and prediction modules
+│   ├── model_sharing/          # Model download/export utilities
+│   ├── paths.py                # Path configuration
+│   ├── postprocessing/         # Post-processing utilities
+│   ├── run/                    # Training entry points
+│   ├── training/               # Training logic and trainers
+│   │   ├── data_augmentation/  # Data augmentation transforms
+│   │   ├── dataloading/        # Data loading utilities
+│   │   ├── loss/               # Loss functions
+│   │   ├── lr_scheduler/       # Learning rate schedulers
+│   │   └── nnUNetTrainer/      # Trainer implementations
+│   └── utilities/              # Utility functions
+├── documentation/              # Documentation and examples
+├── pyproject.toml              # Project configuration
+└── setup.py                    # Setup script
+```
+
+---
+
+## License
+
+- The nnU-Net framework code retains its original Apache-2.0 license.
+- Our released model weights and dataset are distributed under CC-BY license.
+
+---
+
+## Citation
+
+If you use this dataset or models, please cite:
+---
+
+## Acknowledgments
+
+This project is based on the nnU-Net framework developed by the Division of Medical Image Computing at the German Cancer Research Center (DKFZ), Heidelberg, Germany. We thank Fabian Isensee and the DKFZ team for releasing nnU-Net.
+
+We extend our sincere gratitude to the radiologists who provided high-quality ground truth annotations for hepatic veins, portal veins, and liver tumors. Their expertise and meticulous manual delineations form the foundation of the accurate segmentation models in this project.
+
+Data Source:
+- Center 1: Guangdong Provincial People's Hospital, Guangdong Academy of Medical Sciences
+- Center 2: Guangxi Medical University Cancer Hospital
+
+Funding:
+This study was supported by the Shenzhen Science and Technology Innovation Program (Grant No. JCYJ20250604183707010), the Shenzhen Medical Research Special Fund Project (Grant No. C2501020), and the Guangdong Medical Science and Technology Research Foundation Program (Grant No. 2025262).
