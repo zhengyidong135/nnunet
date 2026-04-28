@@ -205,7 +205,6 @@ nnunet/
 
 ## Citation
 
-If you use this dataset or models, please cite:
 ---
 
 ## Acknowledgments
