@@ -8,10 +8,10 @@ This repository releases the automatic segmentation pipeline based on nnU-Net V2
 
 ## Highlights
 
-Based on the nnU-Net framework, we developed three distinct segmentation models—specifically designed for segmenting the hepatic veins, portal veins, and liver tumors.
+Based on the nnU-Net framework, we developed three distinct segmentation models—specifically designed for segmenting the hepatic veins, portal veins, and liver tumor segmentation on the portal venous phase of contrast-enhanced CT images.
 
-1. Hepatic Vein - Accurate segmentation of right, middle, and left hepatic veins up to third-order branches
-2. Portal Vein - Automatic segmentation of main portal vein and left/right branches up to third-order ramifications
+1. Hepatic Veins - Accurate segmentation of right, middle, and left hepatic veins up to third-order branches
+2. Portal Veins - Automatic segmentation of main portal vein and left/right branches up to third-order ramifications
 3. Liver Tumor - Automatic detection and segmentation of hepatic masses
 
 These models are trained and validated on the HVM (Hepatic Vessel Map) Dataset, a comprehensive clinical dataset designed for liver vascular segmentation and surgical planning.
@@ -26,7 +26,7 @@ These models are trained and validated on the HVM (Hepatic Vessel Map) Dataset, 
 
 ## Background
 
-Precise delineation of hepatic and portal venous anatomy is crucial for the diagnosis of liver disease, surgical planning, and prognosis prediction. Current three-dimensional visualization of these complex vascular structures relies on manual or semi-automated CT segmentation, which is time-consuming and operator-dependent. Although artificial intelligence (AI) presents a promising alternative, existing methods remain constrained by the scarcity of publicly available datasets with fine-grained vascular annotations.
+Precise delineation of hepatic and portal venous anatomy is crucial for the diagnosis of liver disease, surgical planning, and prognosis prediction. Current three-dimensional visualization of these complex vascular structures relies on manual or semi-automated CT segmentation, which is time-consuming and operator-dependent. Although several AI-based segmentation models have been developed for automatic delineation of hepatic veins and portal veins, significant limitations remain. First, existing AI models typically focus only on the main trunks and first-order branch ramifications, often failing to capture fine structural details of minor branches or to accurately differentiate between hepatic veins and portal veins—a shortcoming that may lead to incorrect identification of the resection planes in liver surgery. Second, there is a notable lack of validation data derived from diseased livers in real-world preoperative settings, raising concerns regarding model generalizability. Since most patients undergoing liver surgery present with underlying hepatic pathology, such pathological alterations— including reduced of hepatic vascular volume, increased venous tortuosity, portal vein embolism, and alterations in venous morphology and topology caused by tumor invasion or compression— can significantly impair the segmentation accuracy of these AI models in clinical scenarios..
 
 ---
 
@@ -38,8 +38,8 @@ All trained models are released on Hugging Face:
 
 | Task | Configuration | Modality |
 |------|---------------|----------|
-| Portal_vein_segment | `3d_fullres` | CT |
-| Hepatic_vein_segment | `3d_fullres` | CT |
+| Portal_veins_segment | `3d_fullres` | CT |
+| Hepatic_veins_segment | `3d_fullres` | CT |
 | Liver_tumor_segment | `3d_fullres` | CT |
 
 To use a pre-trained model:
@@ -114,16 +114,16 @@ The annotated dataset used to train these models includes:
 
 Ground-truth labels in our dataset were produced through a rigorous semi-automatic pipeline:
 
-Step 1: Initial Segmentation
+Step 1: Initial Segmentation:
 A radiologist with 5 years of experience in abdominal imaging performed the initial manual segmentation for all cases using ITK-SNAP software (version 3.8.0).
 
-Step 2: AI-Assisted Annotation**
+Step 2: AI-Assisted Annotation:
 For hepatic veins and portal veins:
 - Initial ground truth from 40 cases was used to train two dedicated 3D-UNet models
 - The trained models generated preliminary segmentation masks for remaining 242 cases
 - The junior radiologist manually corrected these AI-generated masks
 
-Step 3: Quality Control and Final Validation**
+Step 3: Quality Control and Final Validation:
 A senior abdominal radiologist with more than 15 years of expertise reviewed all segmentations, corrected any inaccuracies, and provided final validation.
 
 Annotation Scope:
@@ -205,6 +205,7 @@ nnunet/
 
 ## Citation
 
+If you use this dataset or models, please cite:
 ---
 
 ## Acknowledgments
@@ -212,10 +213,3 @@ nnunet/
 This project is based on the nnU-Net framework developed by the Division of Medical Image Computing at the German Cancer Research Center (DKFZ), Heidelberg, Germany. We thank Fabian Isensee and the DKFZ team for releasing nnU-Net.
 
 We extend our sincere gratitude to the radiologists who provided high-quality ground truth annotations for hepatic veins, portal veins, and liver tumors. Their expertise and meticulous manual delineations form the foundation of the accurate segmentation models in this project.
-
-Data Source:
-- Center 1: Guangdong Provincial People's Hospital, Guangdong Academy of Medical Sciences
-- Center 2: Guangxi Medical University Cancer Hospital
-
-Funding:
-This study was supported by the Shenzhen Science and Technology Innovation Program (Grant No. JCYJ20250604183707010), the Shenzhen Medical Research Special Fund Project (Grant No. C2501020), and the Guangdong Medical Science and Technology Research Foundation Program (Grant No. 2025262).
